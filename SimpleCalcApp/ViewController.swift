@@ -44,8 +44,19 @@ class ViewController: UIViewController {
         
         var operand = parseOperand()
         
-        operators.append(op)
-        operands.append(operand)
+        if operands.count <= 0 {
+            operators.append(op)
+            operands.append(operand)
+        } else {
+            let newOperand = basicOperation(operands[0], right: operand, op: operators[0])
+            
+            if newOperand == nil {
+                clear()
+            } else {
+                operands[0] = newOperand!
+                operators[0] = op
+            }
+        }
         
         populateTextBox()
     }
@@ -88,19 +99,40 @@ class ViewController: UIViewController {
         var text = ""
         for var i = 0; i < operands.count; i++ {
             text += "\(operands[i]) "
-            switch operators[i] {
-            case .add: text += "+ "
-            case .sub: text += "- "
-            case .mul: text += "x "
-            case .div: text += "/ "
-            case .count: text += "count "
-            case .ave: text += "ave "
-            case .fact: text += "fact "
-            default: text += "ERROR"
+            
+            if operators.count > 0 {
+                switch operators[i] {
+                case .add: text += "+ "
+                case .sub: text += "- "
+                case .mul: text += "x "
+                case .div: text += "/ "
+                case .count: text += "count "
+                case .ave: text += "ave "
+                case .fact: text += "fact "
+                default: text += "ERROR"
+                }
             }
         }
         
         textBox.text = text
+    }
+    
+    func basicOperation(left : Double, right : Double, op : Op) -> Double? {
+        switch op {
+        case .add: return left + right
+        case .sub: return left - right
+        case .mul: return left * right
+        case .div: if right == 0 {return nil} else {return left / right}
+        default: return nil
+        }
+    }
+    
+    func clear() {
+        var operands : [Double] = []
+        var operators : [Op] = []
+        var currOperand : [Int] = []
+        var decimal : Bool = false
+        textBox.text = ""
     }
     
     override func viewDidLoad() {
