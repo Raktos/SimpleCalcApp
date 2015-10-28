@@ -17,7 +17,10 @@ class ViewController: UIViewController {
     var operands : [Double] = []
     var operators : [Op] = []
     var currOperand : [Int] = []
+    var decimalOperand : Double = 0.0
     var decimal : Bool = false
+    var typing : Bool = true
+    var clearable : Bool = false
     
     @IBOutlet weak var textBox: UITextField!
     
@@ -28,50 +31,112 @@ class ViewController: UIViewController {
     }
     
     @IBAction func decimalButtonPress(sender: UIButton) {
-        textBox.text = "\(sender.currentTitle!) decimal pressed"
+        decimalOperand = parseOperand()
+        decimal = true
+        textBox.text! += "."
     }
     
     @IBAction func basicFuncButtonPress(sender: UIButton) {
-        var op : Op = Op.error
-        
-        switch sender.currentTitle! {
-        case "+": op = Op.add
-        case "-": op = Op.sub
-        case "x": op = Op.mul
-        case "/": op = Op.div
-        default: op = Op.error
-        }
-        
-        var operand = parseOperand()
-        
-        if operands.count <= 0 {
-            operators.append(op)
-            operands.append(operand)
-        } else {
-            let newOperand = basicOperation(operands[0], right: operand, op: operators[0])
+        if operators.count == 0 || operators[0] == Op.add || operators[0] == Op.sub || operators[0] == Op.div || operators[0] == Op.mul {
+            var op : Op = Op.error
             
-            if newOperand == nil {
-                clear()
-            } else {
-                operands[0] = newOperand!
-                operators[0] = op
+            switch sender.currentTitle! {
+            case "+": op = Op.add
+            case "-": op = Op.sub
+            case "x": op = Op.mul
+            case "/": op = Op.div
+            default: op = Op.error
             }
+            
+            if typing {
+                operands.append(decimalOperand + parseOperand())
+            }
+            
+            if operators.count != 0 {
+                //we already had an operator, we need to do an operation before adding our new one
+                performOperation()
+            }
+            
+            operators.append(op)
+            typing = true
+            populateTextBox()
+        }
+    }
+    
+    @IBAction func aveButtonPress(sender: UIButton) {
+        if operators.count == 0 || operators[0] == Op.ave {
+            if typing {
+                operands.append(decimalOperand + parseOperand())
+            }
+            
+            operators.append(Op.ave)
+            typing = true
+            populateTextBox()
+        }
+    }
+    
+    @IBAction func countButtonPress(sender: UIButton) {
+        if operators.count == 0 || operators[0] == Op.count {
+            if typing {
+                operands.append(decimalOperand + parseOperand())
+            }
+            
+            operators.append(Op.count)
+            typing = true
+            populateTextBox()
+        }
+    }
+    
+    @IBAction func factButtonPress(sender: UIButton) {
+        if operators.count == 0 {
+            if typing {
+                operands.append(decimalOperand + parseOperand())
+            }
+            
+            operators.append(Op.fact)
+            typing = true
+            populateTextBox()
+        }
+    }
+    
+    @IBAction func equalButtonPress(sender: UIButton) {
+        if typing {
+            if currOperand.count > 0 {
+                operands.append(decimalOperand + parseOperand())
+            }
+            switch operators[0] {
+            case .add, .sub, .mul, .div:
+                performOperation()
+            case .ave:
+                performAverage()
+            case .count:
+                performCount()
+            case .fact:
+                performFact()
+            default:
+                return
+            }
+            typing = false
+            populateTextBox()
         }
         
+    }
+    
+    @IBAction func clearButtonPress(sender: UIButton) {
+        clear()
         populateTextBox()
     }
     
-    @IBAction func complexFuncButtonPress(sender: UIButton) {
-        textBox.text = "\(sender.currentTitle!) complex func pressed"
-    }
-    
-    @IBAction func rpnButtonPress(sender: UIButton) {
-        textBox.text = "\(sender.currentTitle!) rpn pressed"
-    }
-    
-    
-    @IBAction func equalButtonPress(sender: UIButton) {
-        textBox.text = "\(sender.currentTitle!) equals pressed."
+    func performOperation() {
+        //for basic functions only
+        let result = basicOperation(operands[0], right: operands[1], op: operators[0])
+        
+        if result == nil {
+            return
+        }
+        
+        clear()
+        operands.append(result!)
     }
     
     func parseOperand() -> Double {
@@ -93,6 +158,12 @@ class ViewController: UIViewController {
         
         currOperand = []
         return final
+    }
+    
+    func divByZero() {
+        clear()
+        clearable = true
+        textBox.text! = "Cannot divide by 0"
     }
     
     func populateTextBox() {
@@ -128,11 +199,46 @@ class ViewController: UIViewController {
     }
     
     func clear() {
-        var operands : [Double] = []
-        var operators : [Op] = []
-        var currOperand : [Int] = []
-        var decimal : Bool = false
+        operands = []
+        operators = []
+        currOperand = []
+        decimal = false
+        typing = true
+        clearable = false
+        decimalOperand = 0.0
         textBox.text = ""
+    }
+    
+    func performAverage() {
+        var result : Double = 0.0
+        for n in operands {
+            result += n
+        }
+        
+        result = result / Double(operands.count)
+        
+        clear()
+        operands.append(result)
+    }
+    
+    func performCount() {
+        var result = Double(operands.count)
+        
+        clear()
+        operands.append(result)
+    }
+    
+    func performFact() {
+        var counter = operands[0] - 1
+        var result = operands[0]
+        
+        while counter > 0 {
+            result *= counter
+            counter--
+        }
+        
+        clear()
+        operands.append(result)
     }
     
     override func viewDidLoad() {
